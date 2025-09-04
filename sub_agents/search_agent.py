@@ -1,4 +1,4 @@
-from contextlib import AsyncExitStack
+from contextlib import asynccontextmanager
 
 import anyio
 from agents import Agent
@@ -15,15 +15,20 @@ INSTRUCTIONS = (
 )
 
 
-async def search_agent() -> Agent:
+@asynccontextmanager
+async def search_agent():
     mcp_server = MCPServerStdio(
         params={"command": "uvx", "args": ["mcp-server-fetch"]},
         client_session_timeout_seconds=60,
     )
-    await mcp_server.connect()
-    return Agent(
-        name="investigator",
-        instructions=INSTRUCTIONS,
-        model=mistral_nemon_model(),
-        mcp_servers=[mcp_server],
-    )
+    await mcp_server.__aenter__()
+    try:
+        agent = Agent(
+            name="investigator",
+            instructions=INSTRUCTIONS,
+            model=mistral_nemon_model(),
+            mcp_servers=[mcp_server],
+        )
+        yield agent
+    finally:
+        await mcp_server.__aexit__(None, None, None)

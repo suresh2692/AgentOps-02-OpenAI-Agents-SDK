@@ -11,12 +11,12 @@ class SupervisorAgent:
         input = f"Search term: {item}"
         print(input)
         try:
-            agent = await search_agent()
-            result = await Runner.run(
-                agent,
-                input,
-            )
-            print(result.final_output)
+            async with search_agent() as agent:
+                result = await Runner.run(
+                    agent,
+                    input,
+                )
+                print(result.final_output)
             return str(result.final_output)
         except Exception as e:
             print(traceback.format_exc())
